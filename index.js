@@ -1,11 +1,14 @@
 import React, {useState, useEffect} from 'react';
-import {SafeAreaView,ScrollView,StatusBar,StyleSheet,Text,TouchableOpacity,useColorScheme,View,Alert, Platform, Button , NativeEventEmitter, NativeModules} from 'react-native';
+import {SafeAreaView,ScrollView,StatusBar,StyleSheet,Text,TouchableOpacity,useColorScheme,View,Alert, Platform, Button , NativeEventEmitter, NativeModules, DeviceEventEmitter, EventEmitter} from 'react-native';
 import Voice from '@react-native-voice/voice'
 import RNFS from 'react-native-fs';
 import {PorcupineManager, BuiltInKeywords, Porcupine} from '@picovoice/porcupine-react-native';
 import Tts from 'react-native-tts'
 import BackgroundJob from 'react-native-background-actions';
 import RNFetchBlob from 'rn-fetch-blob';
+
+const { YourReactNativeModule } = NativeModules
+
 
 let detectionCallback = async (keywordIndex) => {
   if (keywordIndex === 0) {
@@ -19,7 +22,7 @@ let detectionCallback = async (keywordIndex) => {
 
 
     await porcupineManager.stop().then(()=>{
-    console.log('Porcupine heard JARVIS')
+    console.log('Porcupine heard HELLO MARRY')
 
     })
   } else if (keywordIndex === 1) {
@@ -93,7 +96,7 @@ const startRecording = async () => {
 
     console.log('RN-Voice/Voice starting')
    
-  await BackgroundJob.stop()
+  await porcupineManager.stop()
 
   try {
     console.log('rus')
@@ -197,13 +200,46 @@ function App(): JSX.Element {
 
 
   const VoiceModule = NativeModules.VoiceModule;
+  const AudioManager = NativeModules.AudioManager
 
   // Create a new instance of NativeEventEmitter with VoiceModule as the argument
   const eventEmitter = new NativeEventEmitter(VoiceModule);
-
+  const audioManagerEmitter = DeviceEventEmitter
   
   
+  // event listener
 
+  audioManagerEmitter.addListener('onAudioFocusChange', (event) => {
+    const { focusChange } = event;
+  
+    // Handle audio focus changes
+    switch (focusChange) {
+      case AudioManager.AUDIOFOCUS_GAIN:
+        // Other app lost audio focus, you can resume your action
+        console.log(12);
+        
+        break;
+      case AudioManager.AUDIOFOCUS_LOSS:
+        // Other app gained long-term audio focus, you should stop or pause your action
+        console.log(12);
+        
+        break;
+      case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+        // Other app gained temporary audio focus, you should pause your action
+        console.log(12);
+        
+        break;
+      case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+        // Other app gained temporary audio focus, you can lower the volume of your action
+        console.log(12);
+        
+        break;
+      default:
+        console.log(12);
+        
+        break;
+    }
+  });
   
 // const ttsFinisher = eventEmitter.addListener('tts-finish', (event) => {
 
@@ -214,12 +250,13 @@ function App(): JSX.Element {
   
   
   // Now you can add event listeners using eventEmitter.addListener() method
-  eventEmitter.addListener('onSpeechResults', async (event) => {
+   eventEmitter.addListener('onSpeechResults', async (event) => {
 
       console.log('Speech Got');
       console.log(event.value[0])
       const ttseventEmitter = new NativeEventEmitter()
       if (event.value[0]==='отбой') {
+        ttseventEmitter.removeAllListeners('tts-finish')
         Voice.stop()
           Tts.speak('Перехожу в фоновый режим', {
           androidParams: {
@@ -229,13 +266,25 @@ function App(): JSX.Element {
             
           }
         })
+        
+        // setTimeout(() => {
+        //  handleButtonClick()
+        // }, 5000);
 
+        eventEmitter.addListener('tts-finish', (event) => {
+
+          ttseventEmitter.removeAllListeners('tts-finish')
+          handleButtonClick()
+          
+        })
+          
 
 
         try {
           console.log('TRYEING TO START');
-          await BackgroundJob.start(taskRandom,options).then(() =>console.log('Successful start'));
+          await porcupineManager.start().then(() =>console.log('Successful start'));
           
+   
         } catch (e) {
           console.log('Error', e);
           
@@ -253,6 +302,7 @@ function App(): JSX.Element {
         // });
         
         ttseventEmitter.removeAllListeners('tts-finish')
+        BackgroundJob.stop()
         Voice.stop()
           Tts.speak('умираю', {
           androidParams: {
@@ -273,7 +323,6 @@ function App(): JSX.Element {
           
         // });
         
-        Voice.stop()
           Tts.speak('Ваши задачи на сегодня такие,такие и такие', {
           androidParams: {
             KEY_PARAM_PAN: -1,

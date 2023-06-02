@@ -1,482 +1,383 @@
-import React, {useState, useEffect} from 'react';
-import {SafeAreaView,ScrollView,StatusBar,StyleSheet,Text,TouchableOpacity,useColorScheme,View,Alert, Platform, Button , NativeEventEmitter, NativeModules, DeviceEventEmitter, EventEmitter} from 'react-native';
+import React from 'react';
+import {SafeAreaView,StyleSheet,Text,TouchableOpacity,View,PermissionsAndroid, NativeEventEmitter, NativeModules, Alert, } from 'react-native';
 import Voice from '@react-native-voice/voice'
 import RNFS from 'react-native-fs';
-import {PorcupineManager, BuiltInKeywords, Porcupine} from '@picovoice/porcupine-react-native';
+import {PorcupineManager} from '@picovoice/porcupine-react-native';
 import Tts from 'react-native-tts'
 import BackgroundJob from 'react-native-background-actions';
 import RNFetchBlob from 'rn-fetch-blob';
+import { startRecordingRedux, stopRecordingRedux, isRecordingRedux } from './redux/reduxHelper';
+import { useSelector} from 'react-redux';
 
-const { YourReactNativeModule } = NativeModules
+    const VoiceModule = NativeModules.VoiceModule;
+    const eventEmitter = new NativeEventEmitter(VoiceModule);
+    const ttsEventEmitter = new NativeEventEmitter()
+    const { MicrophoneModule } = NativeModules
+    const event2Emitter = new NativeEventEmitter(NativeModules.RCTDeviceEventEmitter);
 
-
-let detectionCallback = async (keywordIndex) => {
-  if (keywordIndex === 0) {
-    Tts.speak('Я вас слушаю!', {
-      androidParams: {
-        KEY_PARAM_PAN: -1,
-        KEY_PARAM_VOLUME: 0.9,
-        KEY_PARAM_STREAM: 'STREAM_MUSIC',
-      },
-    }),
-
-
-    await porcupineManager.stop().then(()=>{
-    console.log('Porcupine heard HELLO MARRY')
-
-    })
-  } else if (keywordIndex === 1) {
-    // detected `bumblebee`
-  }
-}
-const documentDir = RNFetchBlob.fs.dirs.DocumentDir
-const documentDir1 = RNFetchBlob.fs.asset('hello-marry_en_android_v2_2_0.ppn')
-const KEYWORD_FILE_NAME = 'hello-marry_en_android_v2_2_0.ppn';
-const JARVIS_FILE_NAME = 'jarvis.ppn';
-const MODEL_FILE_NAME = 'porcupine_params.pv';
-const filePath = `${documentDir}/${KEYWORD_FILE_NAME}`;
-const modelPath = `${documentDir}/${MODEL_FILE_NAME}`
-console.log(documentDir);
-console.log(documentDir1)
-console.log(modelPath);
-
-const assetFilePath = 'hello-marry_en_android_v2_2_0.ppn';
-const destFilePath = `${RNFS.DocumentDirectoryPath}/${assetFilePath}`;
-
-RNFS.copyFileAssets(assetFilePath, destFilePath)
-  .then(() => {
-    console.log('File copied successfully.');
-    // You can now use the copied file at destFilePath
-  })
-  .catch((error) => {
-    console.log(`Error copying file: ${error}`);
-  });
-
-RNFetchBlob.fs.exists(filePath)
-.then((exist) => {
-    console.log(`file ${exist ? '' : 'not'} exists`)
-})
-.catch(() => { })
-
-RNFetchBlob.fs.exists(modelPath)
-.then((exist) => {
-    console.log(`model ${exist ? '' : 'not'} exists`)
-})
-.catch(() => { })
-
-RNFetchBlob.fs.ls(documentDir)
-.then(files => console.log(`Files in directory: ${files}`))
-.catch(error => console.log(`Error: ${error}`));
+    const AndroidParams = {
+      KEY_PARAM_PAN: -1,
+      KEY_PARAM_VOLUME: 0.9,
+      KEY_PARAM_STREAM: 'STREAM_MUSIC',
+    }
 
 
-let porcupineManager: PorcupineManager;
-
-const initializePorcupine = async () => {
-  porcupineManager =  await PorcupineManager.fromKeywordPaths(
-    "BHBnzIoOKHqjHm5h1SU5Px+QL7RRodB4iL6t9A3fcwpIRRLUMzgXQQ==",
-    [filePath],
-    detectionCallback,
-    processErrorCallback
-  );
-
-  console.log('Porcupine Jarvis Listener Initialised')
-}
-  const porcupineStarter = async () => await porcupineManager.start();
-  const porcupineStopper = async () => await porcupineManager.stop();
-
-  initializePorcupine();
-
-
-BackgroundJob.on('expiration', () => {
-  console.log('iOS: I am being closed')
-})
-
-
-const startRecording = async () => {
-
-    console.log('RN-Voice/Voice starting')
-   
-  await porcupineManager.stop()
-
-  try {
-    console.log('rus')
-    await Voice.start('ru-RU').then(()=> console.log('Started Voice'))
     
-  } catch (error) {
-    console.log(error)
-  }
-}
+    const documentDir = RNFetchBlob.fs.dirs.DocumentDir
+    const documentDir1 = RNFetchBlob.fs.asset('hello-marry_en_android_v2_2_0.ppn')
+    const KEYWORD_FILE_NAME = 'Привет-Анна_ru_android_v2_2_0.ppn';
+    const MODEL_FILE_NAME = 'porcupine_params_ru.pv';
+    const filePath = `${documentDir}/${KEYWORD_FILE_NAME}`;
+    const modelPath = `${documentDir}/${MODEL_FILE_NAME}`
+    console.log(documentDir);
+    console.log(documentDir1)
+    console.log(modelPath);
 
-const processErrorCallback = (error) => {
-  console.error(error);
-};
+    const assetFilePath = 'Привет-Анна_ru_android_v2_2_0.ppn';
+    const destFilePath = `${RNFS.DocumentDirectoryPath}/${assetFilePath}`;
+
+    const modelFilePath = 'porcupine_params_ru.pv';
+    const destModelPath = `${RNFS.DocumentDirectoryPath}/${modelFilePath}`;
+
+    RNFetchBlob.fs.exists(filePath)
+    .then((exist) => {
+        if(!exist) {
+          RNFS.copyFileAssets(assetFilePath, destFilePath)
+          .then(() => {
+            console.log('File copied successfully.');
+            // You can now use the copied file at destFilePath
+          })
+          .catch((error) => {
+            console.log(`Error copying file: ${error}`);
+          });
+        }
+        console.log(`file ${exist ? '' : 'not'} exists and not copied`)
+    })
+    .catch(() => { })
+
+    RNFetchBlob.fs.exists(modelPath)
+    .then((exist) => {
+        if(!exist) {
+
+          RNFS.copyFileAssets(modelFilePath, destModelPath)
+          .then(() => {
+            console.log('model copied successfully.');
+            // You can now use the copied file at destFilePath
+          })
+          .catch((error) => {
+            console.log(`Error copying model: ${error}`);
+          });
+
+        }
+        console.log(`model ${exist ? '' : 'not'} exists and not copied`)
+    })
+    .catch(() => { })
+
+    RNFetchBlob.fs.ls(documentDir)
+    .then(files => console.log(`Files in directory: ${files}`))
+    .catch(error => console.log(`Error: ${error}`));
+
+    const requestMicrophonePermission = async () => {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+            {
+              title: 'Microphone Permission',
+              message: 'App needs access to your microphone.',
+              buttonPositive: 'OK',
+              buttonNegative: 'Cancel',
+            }
+        );
+
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('Microphone permission granted.');
+          // Выполняйте необходимые действия, когда разрешение предоставлено
+          // ...
+        } else {
+          console.log('Microphone permission denied.');
+          // Обработайте случай, когда разрешение не предоставлено
+          // ...
+        }
+      } catch (error) {
+        console.log('Error while requesting microphone permission:', error);
+      }
+    };
+
+    requestMicrophonePermission()
+
+  
+    
+    let detectionCallback = async (keywordIndex) => {
+      
+      await porcupineManager.stop()
+
+      if (keywordIndex === 0) {
+        event2Emitter.removeAllListeners('audioFocusChange')
+        
+        Tts.speak('Я вас слушаю!', { androidParams: AndroidParams})
+    
+        await porcupineManager.stop().then(()=>{
+          console.log('Porcupine heard HELLO MARRY')
+        })
+      }
+    };
 
 
+
+
+    const processErrorCallback = (error) => {
+      console.error(error);
+    };
+
+    const sensitivity = 0.5
+    let porcupineManager
+
+    const initializePorcupine = async () => {
+      porcupineManager =  await PorcupineManager.fromKeywordPaths(
+        "Wh5HniwAuj+xkzozNeBu8Hg1jMaQSsXoo5hED1293v/eu9u7dKb9FA==",
+        [filePath],
+        detectionCallback,
+        processErrorCallback,
+        modelPath,
+        [0.3]
+
+      );
+
+
+      const ttsStarter = ttsEventEmitter.addListener('tts-finish', (event) => {
+        startRecording()
+        console.log('Speech finished' + event);
+      });
+
+
+                              // О Б Р А Б О Т К А      У С Л Ы Ш А Н Н О Г О      Т Е К С Т А
+
+      eventEmitter.addListener('onSpeechError', async (event) => {
+        try {
+          console.log('TRYEING TO START');
+          await porcupineManager.start()
+          console.log('Successful start')
+        } catch (e) {
+          console.log('Error', e);
+        }
+      })
+
+      eventEmitter.addListener('onSpeechResults', async (event) => {
+        if (event.value[0]==='отбой') {
+          ttsEventEmitter.removeAllListeners('tts-finish')
+          Voice.stop()
+          Tts.speak('Перехожу в фоновый режим', { androidParams: AndroidParams})
+          eventEmitter.addListener('tts-finish', (event) => {
+            eventEmitter.removeAllListeners('tts-finish')
+            eventEmitter.addListener('tts-finish', (event) => {
+              startRecording()
+              console.log('Speech finished' + event);
+            })
+          })
+          try {
+            console.log('TRYEING TO START');
+            await porcupineManager.start().then(() =>console.log('Successful start'));
+          } catch (e) {
+            console.log('Error', e);
+          }
+
+        } else if (['какие мои задачи на сегодня', 'какие задачи у меня', 'какие у меня задачи'].includes(event.value[0].toLowerCase())) {
+          Tts.speak('Ваши задачи на сегодня такие,такие и такие', { androidParams: AndroidParams })
+
+        } else if (event.value[0]==='исчезни') {
+          try {
+            await porcupineManager.stop()
+            ttsEventEmitter.removeAllListeners('tts-finish')
+            eventEmitter.removeAllListeners('onSpeechError')
+            stopRecordingRedux()
+            await BackgroundJob.stop()
+            Voice.stop()
+            Tts.speak('исчезаю', { androidParams: AndroidParams })
+          } catch (error) {
+            Alert.alert('Ошибка исчезновения', error.message);
+          }
+    
+        } else {
+            Tts.speak(event.value[0], { androidParams: AndroidParams })
+        }
+
+      });
+
+
+      console.log('Porcupine ANNA Listener Initialised')
+      
+      eventEmitter.addListener('tts-finish', (event) => {
+          startRecording()
+          console.log('Speech finished' + event);
+      })
+
+      console.log('TTS_FINISH_ANNA_LISTENER OK')
+
+    }
+
+
+    initializePorcupine();
+
+
+
+
+    const startRecording = async () => {
+
+        console.log('RN-Voice/Voice starting')
+      
+      await porcupineManager.stop()
+
+      try {
+        console.log('rus')
+        await Voice.start('ru-RU').then(()=> console.log('Started Voice'))
+        
+      } catch (error) {
+        console.log(error)
+      }
+    }
 
 
     const sleep = time => new Promise(resolve => setTimeout ( () => resolve() , time)) 
 
-    const taskRandom = async taskData => {
-      if (Platform.OS === 'ios') {
-        console.warn('WARNED')
-      } 
-      console.log('Stated Tasking')
+    const WakeWordTask = async taskData => {
+      
       await porcupineManager.start()
       
       await new Promise( async resolve => {
         const {delay} = taskData
         console.log(BackgroundJob.isRunning(), delay)
-        for (let i=0; BackgroundJob.isRunning(); i++) {
-          console.log('Runned ->', i);
-          // await BackgroundJob.updateNotification({
-          //   taskDesc: 'Runned -> ' + i,
-          //   progressBar: 2,
-          // })
-          await sleep(delay)
-        }
+        const subscription = event2Emitter.addListener('audioFocusChange', async (focusChange) => {
+          console.log(typeof focusChange);
+          console.log(focusChange);
+
+          if (focusChange === 'AUDIOFOCUS_LOSS') {
+            await porcupineManager.stop();
+            console.log('hello marry Finished LOSS');
+            const checkMicrophone = () => {
+              console.log('CHECKING_MICROPHONE');
+              MicrophoneModule.isMicrophoneOn(async (isMicOn) => {
+                console.log(isMicOn)
+                
+                if (isMicOn) {
+                    setTimeout(checkMicrophone, 10000);
+                } else {
+                    await porcupineManager.start().then(()=> 'started micro')
+                }
+
+              });
+            };
+              
+            setTimeout(async () => {
+              console.log('LoopingStartFunction');
+              checkMicrophone();
+            }, 10000);
+          } 
+
+          else if (focusChange === "AUDIOFOCUS_LOSS_TRANSIENT") {
+            await porcupineManager.stop()
+            console.log('hello marry Finished LOSS_TRANSIENT ')
+          } 
+            
+          else if (focusChange === "AUDIOFOCUS_GAIN") {
+            console.log('AUFIOFOCUS_GAIN Start')
+          } 
+
+          else if (focusChange === "AUDIOFOCUS_GAIN_TRANSIENT") {
+                console.log('AUDIOFOCUS_GAIN_TRANSIENT')
+
+          } else {
+              await porcupineManager.start()
+              console.log('hello marry start')
+          }
+        });
+
+        await BackgroundJob.updateNotification({
+            taskDesc: 'Помощник активирован',
+            progressBar: 2,
+          })
+        // for (let i=0; BackgroundJob.isRunning(); i++) {
+         
+        //   console.log('Runned ->', i);
+  
+        //   await sleep(delay)
+        // }
       })
-      }
+    }
 
 
-      const options = {
-        taskName: 'Мэрри',
-        taskTitle: 'Мэрри',
-        taskDesc: 'Мэрри, голосовой менеджер',
-        taskIcon: {
-            name: 'ic_launcher',
-            type: 'mipmap',
-        },
-        color: '#ff00ff',
-        linkingURI: 'exampleScheme://chat/jane', // See Deep Linking for more info
-        parameters: {
-            delay: 1000,
-        },
-        };
-
-
-    
+    const options = {
+      taskName: 'Анна',
+      taskTitle: 'Анна',
+      taskDesc: 'Анна, голосовой менеджер',
+      taskIcon: {
+          name: 'ic_launcher',
+          type: 'mipmap',
+      },
+      color: '#ff00ff',
+      linkingURI: 'exampleScheme://chat/jane', // See Deep Linking for more info
+      parameters: {
+        delay: 1000,
+      },
+    };
 
     const runStartBackground = async () => {
-
-      
-      
-      if(!BackgroundJob.isRunning()) {
+      if (!BackgroundJob.isRunning()) {
         try {
-          console.log('TRYEING TO START');
-          await BackgroundJob.start(taskRandom,options).then(() =>console.log('Successful start'));
-          
-        } catch (e) {
-          console.log('Error', e);
-          
+          console.log('TRYING TO START');
+          startRecordingRedux();
+          const ttsStarter = eventEmitter.addListener('tts-finish', (event) => {
+            startRecording();
+            console.log('Speech finished' + event);
+          });
+          await BackgroundJob.start(WakeWordTask, options);
+          console.log('Successful start');
+        } catch (error) {
+          console.log('Error', error);
         }
       } else {
-        
-        await BackgroundJob.stop().then(()=> console.log('Stop background service'))
-      }
-  
-  
-    }
-
-
-
-
-
-
-
-   
-  
-
-
-function App(): JSX.Element {
-
-
-  const [isRecording, setIsRecording] = useState(false);
-  const [error, setError] = useState('');
-  const [dying, setDying] = useState(false);
-  const [sleeping, setSleeping] = useState(false)
-  const [porcupineState, setPorcupineState] = useState('stopped');
-  const [startedInBack, setStartedInBack] = useState('stopped');
-
-
-
-  const VoiceModule = NativeModules.VoiceModule;
-  const AudioManager = NativeModules.AudioManager
-
-  // Create a new instance of NativeEventEmitter with VoiceModule as the argument
-  const eventEmitter = new NativeEventEmitter(VoiceModule);
-  const audioManagerEmitter = DeviceEventEmitter
-  
-  
-  // event listener
-
-  audioManagerEmitter.addListener('onAudioFocusChange', (event) => {
-    const { focusChange } = event;
-  
-    // Handle audio focus changes
-    switch (focusChange) {
-      case AudioManager.AUDIOFOCUS_GAIN:
-        // Other app lost audio focus, you can resume your action
-        console.log(12);
-        
-        break;
-      case AudioManager.AUDIOFOCUS_LOSS:
-        // Other app gained long-term audio focus, you should stop or pause your action
-        console.log(12);
-        
-        break;
-      case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-        // Other app gained temporary audio focus, you should pause your action
-        console.log(12);
-        
-        break;
-      case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-        // Other app gained temporary audio focus, you can lower the volume of your action
-        console.log(12);
-        
-        break;
-      default:
-        console.log(12);
-        
-        break;
-    }
-  });
-  
-// const ttsFinisher = eventEmitter.addListener('tts-finish', (event) => {
-
-//   startRecording()
-//   console.log('Speech finished' + event);
-  
-// });
-  
-  
-  // Now you can add event listeners using eventEmitter.addListener() method
-   eventEmitter.addListener('onSpeechResults', async (event) => {
-
-      console.log('Speech Got');
-      console.log(event.value[0])
-      const ttseventEmitter = new NativeEventEmitter()
-      if (event.value[0]==='отбой') {
-        ttseventEmitter.removeAllListeners('tts-finish')
-        Voice.stop()
-          Tts.speak('Перехожу в фоновый режим', {
-          androidParams: {
-            KEY_PARAM_PAN: -1,
-            KEY_PARAM_VOLUME: 0.9,
-            KEY_PARAM_STREAM: 'STREAM_MUSIC',
-            
-          }
-        })
-        
-        // setTimeout(() => {
-        //  handleButtonClick()
-        // }, 5000);
-
-        eventEmitter.addListener('tts-finish', (event) => {
-
-          ttseventEmitter.removeAllListeners('tts-finish')
-          handleButtonClick()
-          
-        })
-          
-
-
+        console.log('Stopping');
         try {
-          console.log('TRYEING TO START');
-          await porcupineManager.start().then(() =>console.log('Successful start'));
-          
-   
-        } catch (e) {
-          console.log('Error', e);
-          
+          await BackgroundJob.stop();
+          console.log('Stop background service');
+          await porcupineManager.stop();
+          console.log('Stop recording');
+          stopRecordingRedux();
+        } catch (error) {
+          console.log('Error', error);
         }
-
-        
-
-      } else if (event.value[0]==='умри') {
-
-        // const ttsFinisher = eventEmitter.addListener('tts-finish', (event) => {
-        //   console.log('startFinish')
-        //   startRecording()
-        //   console.log('Speech finished' + event);
-          
-        // });
-        
-        ttseventEmitter.removeAllListeners('tts-finish')
-        BackgroundJob.stop()
-        Voice.stop()
-          Tts.speak('умираю', {
-          androidParams: {
-            KEY_PARAM_PAN: -1,
-            KEY_PARAM_VOLUME: 0.9,
-            KEY_PARAM_STREAM: 'STREAM_MUSIC',
-            
-          }
-        })
-        
-
-      } else if (event.value[0]==='Какие мои задачи на сегодня') {
-
-        // const ttsFinisher = eventEmitter.addListener('tts-finish', (event) => {
-        //   console.log('startFinish')
-        //   startRecording()
-        //   console.log('Speech finished' + event);
-          
-        // });
-        
-          Tts.speak('Ваши задачи на сегодня такие,такие и такие', {
-          androidParams: {
-            KEY_PARAM_PAN: -1,
-            KEY_PARAM_VOLUME: 0.9,
-            KEY_PARAM_STREAM: 'STREAM_MUSIC',
-            
-          }
-        })
-
-
-
-      }else {
-        Tts.speak(event.value[0], {
-          androidParams: {
-            KEY_PARAM_PAN: -1,
-            KEY_PARAM_VOLUME: 0.9,
-            KEY_PARAM_STREAM: 'STREAM_MUSIC',
-            
-          }
-        })
       }
-
-  });
-
-  eventEmitter.addListener('onSpeechStart', (event) => {
-   
-    console.log('Speech Started');
-    
-});
-// eventEmitter.addListener('tts-finish', (event) => {
-
-//         startRecording()
-//         console.log('Speech finished' + event);
-        
-//       })
-
-const handleButtonClick = () => {
-  const ttsStarter = eventEmitter.addListener('tts-finish', (event) => {
-
-    startRecording()
-    console.log('Speech finished' + event);
-    
-  });
-};
+    };
 
 
-  // useEffect(() => {
-  //   console.log("EVEN DONT KNOW WHAT")
-  //   Voice.onSpeechError = err => setError(err.error)
-  //   Voice.onSpeechResults = result => {
-  //       console.log('Speech Got');
-        
-  //     Alert.alert('Speech Result', result.value[0])
-  //     Tts.speak(result.value[0], {
-  //       androidParams: {
-  //         KEY_PARAM_PAN: -1,
-  //         KEY_PARAM_VOLUME: 0.9,
-  //         KEY_PARAM_STREAM: 'STREAM_MUSIC',
-  //       },
-  //     })
-    
-  //   };
-  
-  //   return () => {
-  //     // Remove event listeners when the component unmounts
-  //     Voice.removeAllListeners();
-  //   };
-  // }, [])
-
-  // useEffect(() => {
-  //   console.log("EVEN DONT KNOW WHAT 2")
-  //   Voice.onSpeechError = err => setError(err.error)
-  //   Voice.onSpeechResults = result => {
-  //       console.log('Speech Got');
-        
-  //     Alert.alert('Speech Result', result.value[0])
-  //     Tts.speak(result.value[0], {
-  //       androidParams: {
-  //         KEY_PARAM_PAN: -1,
-  //         KEY_PARAM_VOLUME: 0.9,
-  //         KEY_PARAM_STREAM: 'STREAM_MUSIC',
-  //       },
-  //     })
-    
-  //   };
-  // },[Voice._listeners])
-
-  // useEffect(() => {
-  //   BackgroundJob.on('expiration', () => {
-  //     console.log('Background task expired');
-  //   });
-
-  //   return () => {
-  //     BackgroundJob.removeAllListeners();
-  //   };
-  // }, []);
+  function App() {
 
 
-  return (
-<SafeAreaView style={styles.container}>
-<View style={styles.status}>
-<Text style={styles.statusText}>
-Porcupine State = {porcupineState}
-</Text>
-<Text style={styles.statusText}>
-Started in Background = {startedInBack}
-</Text>
-</View>
+    const isRecording = useSelector((state) => state.recording.isRecording);
+     
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.status}>
+          <Text style={styles.statusText}>
+            {isRecording ? 'Приложение работает' : 'Приложение неактивно '}
+          </Text>
+        </View>
 
-  <TouchableOpacity
-    onPress={() =>
-      isRecording ? null : (setIsRecording(true), startRecording())
-    }
-    style={styles.recordButton}>
-    <Text style={styles.recordButtonText}>
-      {isRecording ? 'Stop Recording' : 'Start Recording'}
-    </Text>
-  </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => runStartBackground()}
+          style={{...styles.recordButton, backgroundColor: isRecording === true ? 'red' : 'green' }}
+        >
+          <Text style={styles.recordButtonText}>
+            {isRecording ? 'Остановить' : 'Начать'}
+          </Text>
+          <Text style={styles.recordButtonText}>
+            запись
+          </Text>
+        </TouchableOpacity>
 
-  <View style={styles.buttonRow}>
-    <TouchableOpacity
-      onPress={porcupineStarter}
-      style={styles.button}>
-      <Text style={styles.buttonText}>Start</Text>
-    </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
-    <TouchableOpacity
-      onPress={porcupineStopper}
-      style={styles.button}>
-      <Text style={styles.buttonText}>Stop</Text>
-    </TouchableOpacity>
-  </View>
-
-  <View style={styles.buttonRow}>
-    <TouchableOpacity
-       onPress={() => {
-    runStartBackground();
-    handleButtonClick();
-  }}
-      style={styles.button}>
-      <Text style={styles.buttonText}>Start in Background</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      onPress={async () => {
-        await BackgroundJob.stop();
-      }}
-      style={styles.button}>
-      <Text style={styles.buttonText}>Stop in Background</Text>
-    </TouchableOpacity>
-  </View>
-</SafeAreaView>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -484,11 +385,11 @@ const styles = StyleSheet.create({
   },
   status: {
   alignSelf: 'center',
-  marginTop: 50,
+  marginTop: 110,
   },
   statusText: {
-  fontSize: 16,
-  marginBottom: 10,
+  fontSize: 20,
+  color: 'black'
   },
   recordButton: {
   alignSelf: 'center',
@@ -503,6 +404,7 @@ const styles = StyleSheet.create({
   recordButtonText: {
   fontSize: 24,
   fontWeight: 'bold',
+  color: 'white'
   },
   buttonRow: {
   flexDirection: 'row',

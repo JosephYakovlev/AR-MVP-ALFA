@@ -22,6 +22,19 @@ import { useSelector} from 'react-redux';
     }
 
 
+    const startRecording = async () => {
+      console.log('RN-Voice/Voice starting')
+      await porcupineManager.stop()
+      try {
+        console.log('rus')
+        await Voice.start('ru-RU').then(()=> console.log('Started Voice'))
+        
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+
     
     const documentDir = RNFetchBlob.fs.dirs.DocumentDir
     const documentDir1 = RNFetchBlob.fs.asset('hello-marry_en_android_v2_2_0.ppn')
@@ -129,7 +142,13 @@ import { useSelector} from 'react-redux';
       console.error(error);
     };
 
-    const sensitivity = 0.5
+    
+              //  Инициализация picovoice porcupine слова активации, внутри функции активации 
+              //  вызываются слушатели событий  tts-finish и onSpeechResults, и их выключатели
+              //  в функциях обработки команд, позволяя перезагружать слушатели при каждом
+              //  включении фонового процеса.
+
+
     let porcupineManager
 
     const initializePorcupine = async () => {
@@ -142,15 +161,13 @@ import { useSelector} from 'react-redux';
         [0.3]
 
       );
-
+                  // О Б Р А Б О Т К А      У С Л Ы Ш А Н Н О Г О      Т Е К С Т А
 
       const ttsStarter = ttsEventEmitter.addListener('tts-finish', (event) => {
         startRecording()
         console.log('Speech finished' + event);
       });
 
-
-                              // О Б Р А Б О Т К А      У С Л Ы Ш А Н Н О Г О      Т Е К С Т А
 
       eventEmitter.addListener('onSpeechError', async (event) => {
         try {
@@ -219,30 +236,10 @@ import { useSelector} from 'react-redux';
     initializePorcupine();
 
 
-
-
-    const startRecording = async () => {
-
-        console.log('RN-Voice/Voice starting')
-      
-      await porcupineManager.stop()
-
-      try {
-        console.log('rus')
-        await Voice.start('ru-RU').then(()=> console.log('Started Voice'))
-        
-      } catch (error) {
-        console.log(error)
-      }
-    }
-
-
-    const sleep = time => new Promise(resolve => setTimeout ( () => resolve() , time)) 
-
     const WakeWordTask = async taskData => {
       
       await porcupineManager.start()
-      
+
       await new Promise( async resolve => {
         const {delay} = taskData
         console.log(BackgroundJob.isRunning(), delay)
@@ -373,7 +370,6 @@ import { useSelector} from 'react-redux';
             запись
           </Text>
         </TouchableOpacity>
-
       </SafeAreaView>
     );
   }
@@ -406,22 +402,7 @@ const styles = StyleSheet.create({
   fontWeight: 'bold',
   color: 'white'
   },
-  buttonRow: {
-  flexDirection: 'row',
-  width: '100%',
-  justifyContent: 'space-evenly',
-  marginTop: 50,
-  },
-  button: {
-  width: '40%',
-  height: 40,
-  alignItems: 'center',
-  justifyContent: 'center',
-  backgroundColor: 'lightblue',
-  },
-  buttonText: {
-  fontSize: 16,
-  },
+
   });
 
 export default App;

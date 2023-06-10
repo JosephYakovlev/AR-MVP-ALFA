@@ -236,7 +236,10 @@ import { createUserRecord, getAllUsers, deleteAllUsers, deleteUserRecord, update
           
           const users = getAllUsers();
           console.log(users);
-          const names = users.map((item, index) => 'задача номер' + (index+1) + item.name).join(', ');
+          if (users.length === 0) {
+            Tts.speak('У вас пока нет задач', { androidParams: AndroidParams })
+          }
+          const names = users.map((item, index) => 'задача номер' + (index+1) + ' ' + item.name).join(', ');
           Tts.speak(names, { androidParams: AndroidParams })
 
         } else if (['добавь задачу', 'запиши задачу'].some(str => event.value[0].toLowerCase().includes(str.toLowerCase()))) {
@@ -252,85 +255,85 @@ import { createUserRecord, getAllUsers, deleteAllUsers, deleteUserRecord, update
 
         }
         else if (['исправь задачу номер','исправь задачи номер'].some(str => event.value[0].toLowerCase().includes(str))) {
-          if (['один',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(1, event.value[0].substring(29));
+          if (['один',].some(str => event.value[0].substring(21,28).toLowerCase().includes(str))) { 
+            updateUserRecord(0, event.value[0].substring(29));
             Tts.speak('Исправила задачу номер один на' + event.value[0].substring(29), { androidParams: AndroidParams })
 
-          } else if (['два',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(2, event.value[0].substring(28));
+          } else if (['два',].some(str => event.value[0].substring(21,28).toLowerCase().includes(str))) { 
+            updateUserRecord(1, event.value[0].substring(28));
             Tts.speak('Исправила задачу номер два на' + event.value[0].substring(28), { androidParams: AndroidParams })
 
-          } else if (['три',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(3, event.value[0].substring(28));
+          } else if (['три',].some(str => event.value[0].substring(21,28).toLowerCase().includes(str))) { 
+            updateUserRecord(2, event.value[0].substring(28));
             Tts.speak('Исправила задачу номер три на' + event.value[0].substring(28), { androidParams: AndroidParams })
 
-          } else if (['четыре',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(4, event.value[0].substring(31));
+          } else if (['четыре',].some(str => event.value[0].substring(21,28).toLowerCase().includes(str))) { 
+            updateUserRecord(3, event.value[0].substring(31));
             Tts.speak('Исправила задачу номер четыре на' + event.value[0].substring(31), { androidParams: AndroidParams })
 
-          } else if (['пять',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(5, event.value[0].substring(29));
+          } else if (['пять',].some(str => event.value[0].substring(21,28).toLowerCase().includes(str))) { 
+            updateUserRecord(4, event.value[0].substring(29));
             Tts.speak('Исправила задачу номер пять на' + event.value[0].substring(29), { androidParams: AndroidParams })
 
-          } else if (['шесть',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(6, event.value[0].substring(30));
+          } else if (['шесть',].some(str => event.value[0].substring(21,28).toLowerCase().includes(str))) { 
+            updateUserRecord(5, event.value[0].substring(30));
             Tts.speak('Исправила задачу номер шесть на' + event.value[0].substring(30), { androidParams: AndroidParams })
 
-          } else if (['семь'].some(str => event.value[0].toLowerCase().includes(str)) && !['восемь'].some(str => event.value[0].toLowerCase().includes(str))) {
-            updateUserRecord(7, event.value[0].substring(29));
+          } else if (['семь'].some(str => event.value[0].substring(21,28).toLowerCase().includes(str)) && !['восемь'].some(str => event.value[0].toLowerCase().includes(str))) {
+            updateUserRecord(6, event.value[0].substring(29));
             Tts.speak('Исправила задачу номер семь на' + event.value[0].substring(29), { androidParams: AndroidParams })
 
-          } else if (['восемь',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(8, event.value[0].substring(31));
+          } else if (['восемь',].some(str => event.value[0].substring(21,28).toLowerCase().includes(str))) { 
+            updateUserRecord(7, event.value[0].substring(31));
             Tts.speak('Исправила задачу номер восемь на' + event.value[0].substring(31), { androidParams: AndroidParams })
 
-          } else if (['девять',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(9, event.value[0].substring(31));
+          } else if (['девять',].some(str => event.value[0].substring(21,28).toLowerCase().includes(str))) { 
+            updateUserRecord(8, event.value[0].substring(31));
             Tts.speak('Исправила задачу номер девять на' + event.value[0].substring(31), { androidParams: AndroidParams })
           } else {
-            updateUserRecord(+event.value[0].substring(21,23), event.value[0].substring(27));
+            updateUserRecord(+event.value[0].substring(21,23)-1, event.value[0].substring(27));
             Tts.speak('Исправила задачу номер '+event.value[0].substring(21,23)+'на' + event.value[0].substring(27), { androidParams: AndroidParams })
           }
 
         } 
         else if (['измени задачу номер','измени задачи номер','извини задачу номер','извини задачи номер'].some(str => event.value[0].toLowerCase().includes(str))) {
-          if (['один',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(1, event.value[0].substring(28));
+          if (['один',].some(str => event.value[0].substring(20,27).toLowerCase().includes(str))) { 
+            updateUserRecord(0, event.value[0].substring(28));
             Tts.speak('Изменила задачу номер один на' + event.value[0].substring(28), { androidParams: AndroidParams })
 
-          } else if (['два',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(2, event.value[0].substring(27));
+          } else if (['два',].some(str => event.value[0].substring(20,27).toLowerCase().includes(str))) { 
+            updateUserRecord(1, event.value[0].substring(27));
             Tts.speak('Изменила задачу номер два на' + event.value[0].substring(27), { androidParams: AndroidParams })
 
-          } else if (['три',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(3, event.value[0].substring(27));
+          } else if (['три',].some(str => event.value[0].substring(20,27).toLowerCase().includes(str))) { 
+            updateUserRecord(2, event.value[0].substring(27));
             Tts.speak('Изменила задачу номер три на' + event.value[0].substring(27), { androidParams: AndroidParams })
 
-          } else if (['четыре',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(4, event.value[0].substring(30));
+          } else if (['четыре',].some(str => event.value[0].substring(20,27).toLowerCase().includes(str))) { 
+            updateUserRecord(3, event.value[0].substring(30));
             Tts.speak('Изменила задачу номер четыре на' + event.value[0].substring(30), { androidParams: AndroidParams })
 
-          } else if (['пять',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(5, event.value[0].substring(28));
+          } else if (['пять',].some(str => event.value[0].substring(20,27).toLowerCase().includes(str))) { 
+            updateUserRecord(4, event.value[0].substring(28));
             Tts.speak('Изменила задачу номер пять на' + event.value[0].substring(28), { androidParams: AndroidParams })
 
-          } else if (['шесть',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(6, event.value[0].substring(29));
+          } else if (['шесть',].some(str => event.value[0].substring(20,27).toLowerCase().includes(str))) { 
+            updateUserRecord(5, event.value[0].substring(29));
             Tts.speak('Изменила задачу номер шесть на' + event.value[0].substring(29), { androidParams: AndroidParams })
 
-          } else if (['семь'].some(str => event.value[0].toLowerCase().includes(str)) && !['восемь'].some(str => event.value[0].toLowerCase().includes(str))) {
-            updateUserRecord(7, event.value[0].substring(28));
+          } else if (['семь'].some(str => event.value[0].substring(20,27).toLowerCase().includes(str)) && !['восемь'].some(str => event.value[0].toLowerCase().includes(str))) {
+            updateUserRecord(6, event.value[0].substring(28));
             Tts.speak('Изменила задачу номер семь на' + event.value[0].substring(28), { androidParams: AndroidParams })
 
-          } else if (['восемь',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(8, event.value[0].substring(30));
+          } else if (['восемь',].some(str => event.value[0].substring(20,27).toLowerCase().includes(str))) { 
+            updateUserRecord(7, event.value[0].substring(30));
             Tts.speak('Изменила задачу номер восемь на' + event.value[0].substring(30), { androidParams: AndroidParams })
 
-          } else if (['девять',].some(str => event.value[0].toLowerCase().includes(str))) { 
-            updateUserRecord(9, event.value[0].substring(30));
+          } else if (['девять',].some(str => event.value[0].substring(20,27).toLowerCase().includes(str))) { 
+            updateUserRecord(8, event.value[0].substring(30));
             Tts.speak('Изменила задачу номер девять на' + event.value[0].substring(30), { androidParams: AndroidParams })
           } else {
-            updateUserRecord(+event.value[0].substring(20,22), event.value[0].substring(26));
+            updateUserRecord(+event.value[0].substring(20,22)-1, event.value[0].substring(26));
             Tts.speak('Изменила задачу номер '+event.value[0].substring(20,22)+'на' + event.value[0].substring(26), { androidParams: AndroidParams })
           }
 

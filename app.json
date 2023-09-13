@@ -1,39 +1,368 @@
-{
-  "expo": {
-    "name": "pinet-park",
-    "slug": "pinetka-park",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      },
-      "package": "com.josephyakovlev.pinetpark"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "ce9d1196-867e-4031-98b9-275d87d80cb5"
-      }
+import { createUserTask, getTasks, deleteUserTask,  updateTask, createBufferTask, getAllBufferTasks, destroyAllBufferTasks} from './RealmDB/Actions';
+import { iIncomeComandInterface } from './RealmDB/Interfaces';
+
+
+export default function TaskRouter(TaskInJson: Array<iIncomeComandInterface>): string {
+
+    console.log(typeof TaskInJson)
+
+    // console.log(JSON.parse(TaskInJson))
+
+    const foundedTasks = TaskInJson.map((task,index)=> {
+        console.log('VVOD V ROUTER');
+        console.log(task)
+        let {ACT,DATE,TIME,TASK,LEMMACT,LEMMDATE,LEMMTIME,LEMMTASK,CREATE} = task
+
+
+        // if (LEMMPER && LEMMPER[0] !== 'я' && LEMMPER[0] !== 'мой') {
+        //     console.log(13);
+        //     return `пользователь ${LEMMPER[0]} не найден`
+        // }
+        const me = ['я','мой','меня','мы','мне','мои','мою']
+        const PER = task.LEMMPER ? task.LEMMPER.map(i => me.filter(word => word === i).length > 0 ? 'мне' : i) : null
+        const LEMMPER = task.LEMMPER ? task.LEMMPER.map(i => me.filter(word => i === word).length > 0 ? 'мне' : i) : null
+        console.log('aftetune');
+        console.log(LEMMPER);
+        
+        
+    
+        if(LEMMACT) {
+
+            function parseMonth(month:string):string {
+                const IntMonth = parseInt(month)
+                const months = [
+                    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+                    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+                  ];
+
+                return months[IntMonth-1]
+            }
+
+            if (LEMMACT[0] === 'найти' || LEMMACT[0] === "какие" || LEMMACT[0] === "какой") {
+                const buffTasks = getAllBufferTasks()
+                if (buffTasks.length > 0) {
+                    destroyAllBufferTasks()
+                }
+               
+                console.log(task);
+                const tasks = getTasks({...task, PER: PER, LEMMPER: LEMMPER})
+                console.log(tasks);
+                console.log(`кол-во текущих задач: ${tasks.length}`)
+                if (tasks.length > 0) {
+                    console.log(`Найдена задача ${tasks[0].name} в ${tasks[0].time} ${tasks[0].date}`);
+                    const foundedTasks = tasks.map((i, index) => {
+                        return `номер ${i.id}) ${i.name} ${i.time === 'не указано' ? 'время не указано' :  `в ${i.time.substring(11,16)}`} ${i.date === 'не указано' ? 'дата не указана' : i.date.substring(8,10) + ' ' + parseMonth(i.date.substring(5,7))} ... статус: ${i.status}... приоритет: ${i.priority}`;
+                    }); // `Задач: ${tasks.length}'. `
+                    console.log(tasks);
+                    console.log(17);
+                    console.log(foundedTasks);
+                    tasks.forEach(task => createBufferTask(task))
+                    return foundedTasks
+                } else {
+                    return ['Задача не найдена']
+                }
+
+            }
+
+            if (LEMMACT[0] === 'кто') {
+                const buffTasks = getAllBufferTasks()
+                if (buffTasks.length > 0) {
+                    destroyAllBufferTasks()
+                }
+               
+                if (CREATE) {
+                    console.log(task);
+                    const tasks = getTasks(task)
+                    console.log(tasks);
+                    console.log(`кол-во текущих задач: ${tasks.length}`)
+                    if (tasks.length > 0) {
+                        return `Найдено задач: ${tasks.length}. Создатель: Вы`
+                    } else {
+                        return 'Задача не найдена'
+                    }
+
+                } else {
+                    console.log(task);
+                    const tasks = getTasks(task)
+                    console.log(tasks);
+                    console.log(`кол-во текущих задач: ${tasks.length}`)
+                    if (tasks.length > 0) {
+                        console.log(`Найдена задача ${tasks[0].name} в ${tasks[0].time} ${tasks[0].date}`);
+                        const executors = tasks.map(i => i.person)
+                        const uniqueExecutors = [...new Set(executors)];
+                        const foundedTasks = uniqueExecutors.reduce((acc,i,index)=> {
+                            return acc + ` ${i === 'мне' ? 'вы' : i}.`
+                        },`Всего найдено исполнителей: ${uniqueExecutors.length}'. `)
+                        console.log(tasks);
+                        console.log(17);
+                        console.log(foundedTasks);
+                        return foundedTasks
+                    } else {
+                        return ['Задача не найдена']
+                    }
+                }
+            }
+
+
+
+            else if (LEMMACT[0] === 'добавь' || LEMMACT[0] === 'добавить' || LEMMACT[0] === 'запись' || LEMMACT[0] === 'записать') {
+                const buffTasks = getAllBufferTasks()
+                if (buffTasks.length > 0) {
+                    destroyAllBufferTasks()
+                }
+               
+                const missing_fields = [];
+                if (!TASK) {
+                    missing_fields.push("задача");
+                }
+                if (!DATE) {
+                    missing_fields.push("дата");
+                }
+                if (!PER) {
+                    missing_fields.push("пользователь");
+                }
+                if (missing_fields.length === 12 || missing_fields.length === 11 && !TIME) {
+                    const answerToUser = missing_fields.reduce((acc, i) => {
+                        return acc + ' ' + i
+                    })
+                    console.log(answerToUser);
+                    return `Вы не указали поля ${answerToUser}`;
+                } else if (missing_fields.length === 13) {
+                    const answerToUser = missing_fields.reduce((acc, i, index) => {
+                        if (index !== 2){   
+                            return acc + ', ' + i
+                        } else {
+                            return acc + ' и ' + i
+                        }
+                    })
+                    console.log(answerToUser);
+                    return `Вы не указали поля ${answerToUser}`;
+
+                } else if (missing_fields.length === 14) {
+
+                    return "Вы не указали дату, время, исполнителя и название задачи";
+                } else {
+                    console.log(123)
+                    const REALTIME = TIME ? TIME : null
+                    const REALLEMMTIME = LEMMTIME ? LEMMTIME : null
+                    // Добавляем задачу в базу данных для указанного пользователя на указанное время и дату
+                    createUserTask({...task, TIME: REALTIME, LEMMTIME: REALLEMMTIME, PER: PER, LEMMPER: LEMMPER});
+                    return "Задача успешно добавлена";
+                }
+            }
+
+
+
+            else if (LEMMACT[0] === "удаль" || LEMMACT[0] === "удалить" || LEMMACT[0] === "удалять" || LEMMACT[0] === "удаление" ) {
+
+                const numberOfKeys = Object.keys(task).length
+                if (numberOfKeys === 1) {
+
+                    const buffTasks = getAllBufferTasks()
+                    if (buffTasks.length > 0) {
+                        buffTasks.forEach(i => deleteUserTask(i))
+                        destroyAllBufferTasks()
+                        return `${buffTasks.length} задач${buffTasks.length === 1 ? 'а' : buffTasks.length > 1 && buffTasks.length < 5 ? 'и' : ''} удален${buffTasks.length === 1 ? 'а' : 'о'}`;
+                    } else {
+                        return 'нет задач для удаления'
+                    }
+                    
+                } else {
+                    const buffTasks = getAllBufferTasks()
+                    if (buffTasks.length > 0) {
+                        destroyAllBufferTasks()
+                    }
+                   
+                    console.log('UDALENIE V ROUTER');
+                    const missing_fields = [];
+                    if (!TASK) {
+                        missing_fields.push("задача");
+                    }
+                    if (!DATE) {
+                        missing_fields.push("дата");
+                    }
+                    if (!TIME) {
+                        missing_fields.push("время");
+                    }
+                    if (!PER) {
+                        missing_fields.push("пользователь");
+                    }
+
+                    if (missing_fields.length === 2) {
+                        const answerToUser = missing_fields.reduce((acc, i) => {
+                            return acc + ' ' + i
+                        })
+                        console.log(answerToUser);
+                        return `Вы не указали поля ${answerToUser}`;
+                    } else if (missing_fields.length === 3) {
+                        const answerToUser = missing_fields.reduce((acc, i, index) => {
+                            if (index !== 2){   
+                                return acc + ', ' + i
+                            } else {
+                                return acc + ' и ' + i
+                            }
+                        })
+                        console.log(answerToUser);
+                        return `Вы не указали поля ${answerToUser}`;
+
+                    } else if (missing_fields.length === 4) {
+
+                        return "Вы не указали дату, время, исполнителя и название задачи";
+                    } else {
+                        // Удаляем задачу из базы данных для указанного пользователя на указанное время и дату
+                        deleteUserTask({...task, PER: PER, LEMMPER: LEMMPER});
+                        return "Задача успешно удалена";
+                    }
+                }
+            }
+            
+
+            
+            else if (LEMMACT[0] === 'изменить' || LEMMACT[0] === 'перенести' || LEMMACT[0] === 'извини' || LEMMACT[0] === 'исправить' || LEMMACT[0] === 'поменять' || LEMMACT[0] === 'скорректировать' || LEMMACT[0] === 'корректировать' || LEMMACT[0] === 'cкорректировать' || LEMMACT[0] === 'поставить' ) {
+
+                const buffTasks = getAllBufferTasks()
+                if (buffTasks.length > 0) {
+                    destroyAllBufferTasks()
+                }
+               
+                console.log(213);
+                console.log(LEMMACT[0]);
+                const missing_fields = [];
+                if (!TASK) {
+                    missing_fields.push("задача");
+                }
+                if (!DATE) {
+                    missing_fields.push("дата");
+                }
+                if (!TIME) {
+                    missing_fields.push("время");
+                }
+                if (!PER) {
+                    missing_fields.push("пользователь");
+                }
+                // if (missing_fields.length === 1 || missing_fields.length === 2) {
+                //     const answerToUser = missing_fields.reduce((acc, i) => {
+                //         return acc + ' и ' + i
+                //     })
+                //     console.log(answerToUser);
+                //     return `Вы не указали поля ${answerToUser}`;
+                // } else if (missing_fields.length === 3) {
+                //     const answerToUser = missing_fields.reduce((acc, i, index) => {
+                //         if (index !== 2){   
+                //             return acc + ', ' + i
+                //         } else {
+                //             return acc + ' и ' + i
+                //         }
+                //     })
+                //     console.log(answerToUser);
+                //     return `Вы не указали поля ${answerToUser}`;
+
+                // } else if (missing_fields.length === 4) {
+
+                //     return "Вы не указали дату, время, исполнителя и название задачи";
+                // } else {
+                    // Редактируем задачу в базе данных для указанного пользователя на указанное время и дату
+                    console.log('ROUTER UPDATING');
+                    const actionAnswer = updateTask({...task, PER: PER, LEMMPER: LEMMPER});
+                    return actionAnswer;
+                // }
+            }
+
+
+
+            // else if (LEMMACT[0] === 'перенести') {
+            //     const missing_fields = [];
+            //     if (!TASK) {
+            //         missing_fields.push("задача");
+            //     }
+            //     if (!DATE) {
+            //         missing_fields.push("дата");
+            //     }
+            //     if (!TIME) {
+            //         missing_fields.push("время");
+            //     }
+            //     if (!PER) {
+            //         missing_fields.push("пользователь");
+            //     }
+            //     if (missing_fields.length === 1 || missing_fields.length === 2) {
+            //         const answerToUser = missing_fields.reduce((acc, i) => {
+            //             return acc + ' и ' + i
+            //         })
+            //         console.log(answerToUser);
+            //         return `Вы не указали поля ${answerToUser}`;
+            //     } else if (missing_fields.length === 3) {
+            //         const answerToUser = missing_fields.reduce((acc, i, index) => {
+            //             if (index !== 2){   
+            //                 return acc + ', ' + i
+            //             } else {
+            //                 return acc + ' и ' + i
+            //             }
+            //         })
+            //         console.log(answerToUser);
+            //         return `Вы не указали поля ${answerToUser}`;
+
+            //     } else if (missing_fields.length === 4) {
+
+            //         return "Вы не указали дату, время, исполнителя и название задачи";
+            //     } else {
+            //         console.log('PODVIGAEDM TASK V ROUTERE');
+            //         moveTask({...task, PER: ["я"]});
+            //         return "Задача успешно перенесена";
+                    
+            //     }
+            // }
+
+            // else if (LEMMACT[0] === 'добавить пользователя') {
+            //     if (PER) {
+            //         // Добавляем нового пользователя в базу данных
+            //         addUserToDatabase(PER);
+            //     } else {
+            //         return "Не указаны все необходимые параметры для добавления пользователя";
+            //     }
+            // } 
+            
+            // else if (LEMMACT[0] === 'удалить пользователя') {
+            //     if (PER) {
+            //         // Удаляем пользователя из базы данных
+            //         deleteUserFromDatabase(PER);
+            //     } else {
+            //         return "Не указаны все необходимые параметры для удаления пользователя";
+            //     }
+            // } 
+            
+            // else if (LEMMACT[0] === 'редактировать пользователя') {
+            //     if (PER && new_person) {
+            //         // Редактируем информацию о пользователе в базе данных
+            //         editUserInDatabase(PER, new_person);
+            //     } else {
+            //         return "Не указаны все необходимые параметры для редактирования пользователя";
+            //     }
+            // } 
+            
+            else {
+                return `Неизвестное действие ${LEMMACT}` ;
+            }
+        }
+
+    }) // Добавьте остальные ветвления в соответствии с вашими условиями
+
+    console.log('Выполнено общих задач после разбития на предложения');
+    console.log(foundedTasks);
+
+    // const stringAnswer = foundedTasks.reduce((acc,i,index): string => {
+    //     //        return acc + ` по ${getNumeralCase(index)} задаче: ` + i + '.'
+    //     return acc + i + '.'
+    // }, '')
+
+    console.log(foundedTasks)
+
+    if (foundedTasks.length > 0) {
+        return foundedTasks ? foundedTasks.flat() : 'нет задач'
+    } else {
+        return 'задач не найдено'
     }
-  }
+
+
+
+
 }
